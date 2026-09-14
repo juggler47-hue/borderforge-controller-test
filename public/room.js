@@ -3,17 +3,47 @@
   const phone=!!document.querySelector('.bf-controller');
   if(!phone){
     const panel=document.createElement('details'); panel.id='bf-room-panel';
-    panel.innerHTML='<summary>Phone controller · connection test</summary><section id="bf-room"><p>Computers show the full game. In-room phones send controls while players watch the TV.</p><button id="bf-create">Create test room</button><button id="bf-close" hidden>Close room</button><p id="bf-invite"></p><p id="bf-count"></p><p id="bf-status" role="status" aria-live="polite">This test does not change your game.</p></section>';
+    panel.innerHTML='<summary>Phone controller · connection test</summary><section id="bf-room"><p>Computers show the full game. In-room phones send controls while players watch the TV.</p><button id="bf-create">Create test room</button><button id="bf-close" hidden>Close room</button><p id="bf-invite"></p><p id="bf-count"></p><p id="bf-status" role="status" aria-live="polite">Stage 2: assign a commander and choose a capital from the phone.</p></section>';
     document.body.append(panel);
   }
   const $=id=>document.getElementById(id);
+  const gameBox=document.createElement('section');gameBox.id='bf-game-controls';$('bf-room').append(gameBox);
+  let rosterKey='',choiceKey='',acks=[];
+  async function syncGame(data){
+    if(phone){
+      const v=data.view;
+      const key=JSON.stringify([v,data.result]);
+      if(key===choiceKey)return;choiceKey=key;gameBox.replaceChildren();
+      const info=document.createElement('p');info.textContent=v?`${v.commander? v.commander+' — ':''}${v.message}`:'Waiting for the host to assign your commander.';gameBox.append(info);
+      if(data.result){const result=document.createElement('p');result.textContent=data.result.message;gameBox.append(result);}
+      for(const option of v?.options||[]){const button=document.createElement('button');button.textContent=`Capital: ${option.name}`;button.onclick=async()=>{
+        gameBox.querySelectorAll('button').forEach(b=>b.disabled=true);
+        try{await api(`/api/rooms/${session.code}/capital`,'POST',{id:crypto.randomUUID(),ticket:v.ticket,territory:option.id});info.textContent='Choice sent. Waiting for host confirmation…';}catch(e){info.textContent=e.message;choiceKey='';}
+      };gameBox.append(button);}
+      return;
+    }
+    const bridge=window.BorderforgeControllerGame;if(!bridge)return;
+    const identities=data.identities||[],seats=bridge.seats();
+    const key=JSON.stringify([identities,seats]);
+    if(key!==rosterKey){rosterKey=key;gameBox.replaceChildren();
+      const help=document.createElement('p');help.textContent='Capital test: choose Local / Hot-Seat, Frontier Command and Quick Deploy, then Begin Deployment. Assign each phone below. Other moves stay on the computer.';gameBox.append(help);
+      for(const identity of identities){const label=document.createElement('label');label.textContent=identity.name+' — commander';const select=document.createElement('select');const empty=document.createElement('option');empty.value='';empty.textContent='Not assigned';select.append(empty);
+        for(const seat of seats){const option=document.createElement('option');option.value=seat.id;option.textContent=seat.name;select.append(option);}
+        select.value=bridge.view(identity.id).seat??'';
+        select.onchange=()=>{try{bridge.assign(identity.id,select.value===''?null:Number(select.value));}catch(e){status(e.message);select.value=bridge.view(identity.id).seat??'';}};label.append(select);gameBox.append(label);
+      }
+    }
+    const views=Object.fromEntries(identities.map(p=>[p.id,bridge.view(p.id)]));
+    const response=await api(`/api/rooms/${session.code}/sync`,'POST',{views,acks});
+    acks=response.pending.map(command=>bridge.apply(command));
+  }
   let session=null, timer=null, seen=0;
   const status=text=>$('bf-status').textContent=text;
   async function api(path, method='GET', body){
     const response=await fetch(path,{method,headers:{...(body?{'Content-Type':'application/json'}:{}),...(session?{Authorization:`Bearer ${session.token}`}:{})},body:body?JSON.stringify(body):undefined,signal:AbortSignal.timeout(10000)});
     const data=await response.json(); if(!response.ok){const error=new Error(data.error); error.status=response.status; throw error;} return data;
   }
-  function clear(){clearTimeout(timer);session=null;try{sessionStorage.removeItem('bf-controller-test-'+(phone?'phone':'host'));}catch{} if(phone){$('bf-join').hidden=false;$('bf-press').hidden=true;}else{$('bf-create').hidden=false;$('bf-close').hidden=true;$('bf-invite').textContent='';$('bf-count').textContent='';}}
+  function clear(){clearTimeout(timer);session=null;gameBox.replaceChildren();rosterKey='';choiceKey='';acks=[];window.BorderforgeControllerGame?.reset();try{sessionStorage.removeItem('bf-controller-test-'+(phone?'phone':'host'));}catch{} if(phone){$('bf-join').hidden=false;$('bf-press').hidden=true;}else{$('bf-create').hidden=false;$('bf-close').hidden=true;$('bf-invite').textContent='';$('bf-count').textContent='';}}
   function save(){try{sessionStorage.setItem('bf-controller-test-'+(phone?'phone':'host'),JSON.stringify(session));}catch{}}
   function show(){
     if(phone){$('bf-join').hidden=true;$('bf-press').hidden=false;}
@@ -28,6 +58,7 @@
     const current=session;if(!current)return;
     try{
       const data=await api(`/api/rooms/${current.code}`);if(session!==current)return;
+      await syncGame(data);if(session!==current)return;
       status(`${data.players.length} controller(s) joined${data.players.length?': '+data.players.join(', '):''}.`);
       if(phone){$('bf-press').disabled=false;}else{
         $('bf-count').textContent=`Signals received: ${data.count}`;

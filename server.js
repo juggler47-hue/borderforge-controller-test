@@ -1,3 +1,4 @@
+import { gameRoomAction } from './game-rooms.js';
 import http from 'node:http';
 import { randomBytes, randomInt } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
@@ -14,7 +15,7 @@ export function createApp({ttl = 30 * 60_000} = {}) {
       const path = new URL(req.url, 'http://localhost').pathname;
       if (path === '/health') return send(res,200,{ok:true});
       if (!path.startsWith('/api/')) {
-        const files = {'/':'index.html','/index.html':'index.html','/controller.html':'controller.html','/room.js':'room.js','/room.css':'room.css'};
+        const files = {'/':'index.html','/index.html':'index.html','/controller.html':'controller.html','/room.js':'room.js','/room.css':'room.css','/game-bridge.js':'game-bridge.js'};
         const file = files[path];
         if (!file || req.method !== 'GET') return send(res,404,{error:'Page not found.'});
         const data = await readFile(new URL(`./public/${file}`,import.meta.url));
@@ -26,7 +27,7 @@ export function createApp({ttl = 30 * 60_000} = {}) {
       if (req.method === 'POST') {
         if (!(req.headers['content-type'] || '').startsWith('application/json')) return send(res,415,{error:'JSON required.'});
         let raw='';
-        for await (const chunk of req) { raw+=chunk; if (raw.length>2048) return send(res,413,{error:'Request too large.'}); }
+        for await (const chunk of req) { raw+=chunk; if (raw.length>32768) return send(res,413,{error:'Request too large.'}); }
         try { body=JSON.parse(raw); } catch { return send(res,400,{error:'Invalid request.'}); }
         if (!body || typeof body !== 'object' || Array.isArray(body)) return send(res,400,{error:'Invalid request.'});
       }
@@ -37,7 +38,7 @@ export function createApp({ttl = 30 * 60_000} = {}) {
         rooms.set(code,{hostToken,players:new Map(),count:0,last:null,touched:Date.now()});
         return send(res,201,{code,token:hostToken});
       }
-      const match=path.match(/^\/api\/rooms\/([A-Z2-9]{8})(?:\/(join|press))?$/);
+      const match=path.match(/^\/api\/rooms\/([A-Z2-9]{8})(?:\/(join|press|sync|capital))?$/);
       const room=match && rooms.get(match[1]);
       if (!room) return send(res,404,{error:'Room has closed or expired. Ask the host for a new code.'});
       const action=match[2];
@@ -45,17 +46,18 @@ export function createApp({ttl = 30 * 60_000} = {}) {
         const name=typeof body.name==='string'?body.name.trim():'';
         if (!name || name.length>30) return send(res,400,{error:'Enter a name of 1–30 characters.'});
         if (room.players.size>=12) return send(res,409,{error:'This test room is full.'});
-        const key=token(); room.players.set(key,{name,lastPress:0,ids:new Map()});
+        const key=token(); room.players.set(key,{id:token(),name,lastPress:0,ids:new Map()});
         return send(res,201,{code:match[1],token:key,name});
       }
       const key=(req.headers.authorization || '').replace(/^Bearer /,'');
       const isHost=key===room.hostToken;
       const player=room.players.get(key);
       if (!isHost && !player) return send(res,403,{error:'Please join the room again.'});
+      if (req.method==='POST' && (action==='sync'||action==='capital')) { const [code,data]=gameRoomAction(room,action,body,player,isHost); return send(res,code,data); }
       if (req.method==='DELETE' && !action && isHost) { rooms.delete(match[1]); return send(res,200,{closed:true}); }
       if (req.method==='GET' && !action) {
         if (isHost) room.touched=Date.now();
-        return send(res,200,{code:match[1],count:room.count,last:room.last,players:[...room.players.values()].map(p=>p.name)});
+        return send(res,200,{code:match[1],count:room.count,last:room.last,players:[...room.players.values()].map(p=>p.name),identities:isHost?[...room.players.values()].map(p=>({id:p.id,name:p.name})):undefined,view:player?room.game?.views[player.id]:undefined,result:player?room.game?.results[player.id]:undefined});
       }
       if (req.method==='POST' && action==='press' && player) {
         if (typeof body.id!=='string' || !/^[a-zA-Z0-9-]{1,64}$/.test(body.id)) return send(res,400,{error:'Invalid action.'});

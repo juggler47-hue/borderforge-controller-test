@@ -1,0 +1,30 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {gameRoomAction} from '../game-rooms.js';
+import vm from 'node:vm';
+import {readFile} from 'node:fs/promises';
+test('controller mailbox rejects other territories, duplicate pending actions and phone sync',()=>{
+ const r={},p={id:'phone'};
+ const views={phone:{ticket:'turn1',options:[{id:4,name:'Home'}]}};
+ assert.equal(gameRoomAction(r,'sync',{views},p,false)[0],405);
+ gameRoomAction(r,'sync',{views},null,true);
+ assert.equal(gameRoomAction(r,'capital',{id:'a',ticket:'turn1',territory:5},p,false)[0],409);
+ assert.equal(gameRoomAction(r,'capital',{id:'a',ticket:'turn1',territory:4},p,false)[0],202);
+ assert.equal(gameRoomAction(r,'capital',{id:'b',ticket:'turn1',territory:4},p,false)[0],409);
+ const result=gameRoomAction(r,'sync',{views:{},acks:[{id:'a',message:'Established'}]},null,true);
+ assert.equal(result[1].pending.length,0);assert.equal(r.game.results.phone.message,'Established');
+});
+test('game bridge checks identity, handoff, ownership, stale campaign and duplicate execution',async()=>{
+ let calls=0;
+ const state={turn:1,phase:'capital',pregameStage:'capital',pregameIndex:0,currentPlayer:0,players:[{id:0,name:'Commander',isHuman:true},{id:1,name:'Second',isHuman:true}],map:{territories:[{id:0,name:'Home',owner:0},{id:1,name:'Other',owner:1}]}};
+ const context=vm.createContext({state,crypto:{randomUUID:()=> 'epoch'},window:{BorderforgeMultiplayer:{status:{mode:'local'}}},handoffPending:false,onTerritoryClick(id){calls++;state.players[0].capitalId=id;state.phase='reinforce';}});
+ vm.runInContext(await readFile(new URL('../public/game-bridge.js',import.meta.url),'utf8'),context);
+ const bridge=context.window.BorderforgeControllerGame;
+ bridge.assign('p',0);assert.throws(()=>bridge.assign('other',0));
+ const v=bridge.view('p');assert.equal(v.options.length,1);
+ bridge.apply({id:'wrong',playerId:'p',ticket:v.ticket,territory:1});assert.equal(calls,0);
+ context.handoffPending=true;assert.equal(bridge.view('p').ticket,null);context.handoffPending=false;
+ const cmd={id:'ok',playerId:'p',ticket:v.ticket,territory:0};bridge.apply(cmd);bridge.apply(cmd);assert.equal(calls,1);
+ context.state={...state,phase:'capital'};assert.equal(bridge.view('p').seat,null);
+ bridge.assign('p',0);bridge.apply({...cmd,id:'stale'});assert.equal(calls,1);
+});

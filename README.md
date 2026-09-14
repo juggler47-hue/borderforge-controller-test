@@ -1,30 +1,26 @@
-# Borderforge — controller connection milestone
+# Borderforge stage 2 — phone capital selection
 
-The original game is preserved in test/fixtures/original-game.html and at its original OneDrive location. public/index.html is the working game. All original inline game scripts remain unchanged, including desktop multiplayer, saves, AI and rules. Only the phone-specific setup style was removed; a separate controller test panel was added.
+The host can now assign each joined phone to a human commander. The phone shows only that commander's owned territories during capital selection. Choosing one updates the real game on the host. Other moves remain on the computer.
 
-## Try the working copy
+## Test steps
 
-Run `npm start` with Node.js 22 or newer, then open http://localhost:3000 on the host computer. Open “Phone controller · connection test” at the bottom right and select “Create test room”. Open the displayed controller link on the second device, enter a name and press “Send test signal”. The host counter updates within about one second and flashes green. Close the room when finished. The host can keep playing the existing game during this test.
+1. On the computer choose Local / Hot-Seat, Frontier Command, Quick Deploy, 1 human and at least 1 AI. Keep Scientific Breakthrough enabled (this enables capitals).
+2. Create a room in the gold controller panel; join it on your phone.
+3. Select Begin Deployment on the computer. Leave the map alone when it asks for a capital.
+4. In the gold panel assign COMMANDER using the dropdown beside your phone name.
+5. On the phone choose a capital territory. The phone confirms Capital established; the host map and game log update.
+6. Continue other moves on the computer. With multiple humans, assign distinct commanders and confirm the game's existing handoff screens on the computer.
 
-For local browser testing, open the controller link in another browser context. A localhost link works only on the computer running the server. For actual internet use, deploy this entire working folder as a Node web service; use its public HTTPS address on both devices. Opening index.html as a file still allows the original game, but cannot create an internet test room.
+## Scope
 
-## Hosting handoff
+Every original inline game script remains unchanged. The original is in test/fixtures/original-game.html. The bridge checks identity, ownership, phase, handoff and current-game tickets before calling the existing game action. The host retains control from the computer. Phones receive only their available capital choices.
 
-No live service has been created or updated. No account credentials are included. If using the existing Render account, deploy the contents of this working folder to a Web Service: build command `npm install`, start command `npm start`, health path `/health`. The server listens on Render's PORT and 0.0.0.0. See https://render.com/docs/web-services . A static-only host such as GitHub Pages cannot run this room server.
+Controller rooms remain separate from existing remote-computer rooms. Mixed remote computers and phones are not implemented yet. Online mode disables controller game actions; existing computer multiplayer remains available.
 
-## Scope and limits
+Assignments require renewal after host reload, game load/new game, or room closure. Phone refresh normally restores its identity through session storage. Rooms are in memory, expire after 30 minutes without host polling and disappear on server restart. Durable recovery is a later stage.
 
-- Remote players use computers with the full game. In-room phones use controller.html while watching the TV.
-- This milestone's test rooms are separate from the existing desktop multiplayer rooms. Phones are not assigned game seats yet. Combining the room systems and connecting validated game actions are later milestones.
-- The original PeerJS desktop multiplayer remains available. It is not yet migrated to the new room service and may still encounter restrictive network issues.
-- The new test transport uses normal HTTP requests to a central service; no direct device-to-device connection or same-Wi-Fi requirement. Polling updates the host roughly once per second.
-- Rooms live in memory on one server instance, expire after 30 minutes without a host poll, and disappear when the service restarts. Keep the host tab open. Refreshing a tab restores its room credentials from session storage when available.
-- This is a bounded family prototype (500 rooms, 12 controllers per room), not a production public matchmaking service. Real phone, cross-network and public HTTPS checks remain required after deployment.
-- No recent change history or previous Render configuration was supplied, so removal decisions were based only on this file. Broad screen-size rules and touch/map controls were preserved because their purpose and history cannot safely be inferred.
+## Deploy and verification
 
-## Verification
+Node 22 or newer. No external packages required. Build: npm test. Start: npm start. Health path: /health. Root Directory blank. Upload this package to the separate borderforge-controller-test repository.
 
-`npm test` checks room creation, joining, host receipt, room isolation, permission boundaries, duplicate actions, closing, expiry, and preservation/parsing of every original inline game script.
-
-Browser verification: host created a room, separate controller page joined as Family test and sent a signal, and host visibly displayed Signals received: 1. The existing game then started and rendered its map while the room stayed open. This was a local browser test, not a physical phone or public internet test.
-
+Five automated checks pass, covering game-script preservation, room isolation and expiry, mailbox permissions, invalid territories, duplicate actions, stale games and handoff checks. Browser verification confirmed commander assignment, selection of Sector Z1 from the controller, confirmation in the host game log, and continued AI turns. Stage 2 still needs deployment and a physical phone test. Stage 1 was verified publicly across networks by the user.
