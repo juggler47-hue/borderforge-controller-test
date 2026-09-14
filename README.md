@@ -24,3 +24,7 @@ Assignments require renewal after host reload, game load/new game, or room closu
 Node 22 or newer. No external packages required. Build: npm test. Start: npm start. Health path: /health. Root Directory blank. Upload this package to the separate borderforge-controller-test repository.
 
 Five automated checks pass, covering game-script preservation, room isolation and expiry, mailbox permissions, invalid territories, duplicate actions, stale games and handoff checks. Browser verification confirmed commander assignment, selection of Sector Z1 from the controller, confirmation in the host game log, and continued AI turns. Stage 2 still needs deployment and a physical phone test. Stage 1 was verified publicly across networks by the user.
+
+## Setup recovery update
+Phone setup opens visibly and has a header button. One phone plus one human commander is assigned automatically. Expired rooms clear the phone code and show recovery instructions while keeping the entered name. Use a different room lets the phone leave stale credentials. Temporary connection failures disable capital buttons while retrying. Rooms still do not survive server restarts. This update is locally tested, not yet published.
+
