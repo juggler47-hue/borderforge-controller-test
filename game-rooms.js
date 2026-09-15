@@ -11,13 +11,15 @@ export function gameRoomAction(room, action, body, player, isHost) {
     }
     return [200,{pending:g.pending}];
   }
-  if(action==='capital' && player){
+  if((action==='capital'||action==='move') && player){
     const v=g.views[player.id];
-    if(!v || !v.ticket || body.ticket!==v.ticket || !v.options?.some(o=>o.id===body.territory))return [409,{error:'That choice is no longer available. Wait for the host update.'}];
+    const option=v?.options?.find(o=>o.id===(body.option??body.territory));
+    if(!v || !v.ticket || body.ticket!==v.ticket || !option)return [409,{error:'That choice is no longer available. Wait for the host update.'}];
+    if(option.max!==undefined&&(!Number.isInteger(body.amount)||body.amount<option.min||body.amount>option.max))return [400,{error:'Choose a valid army count.'}];
     if(g.pending.some(p=>p.playerId===player.id))return [409,{error:'Your choice is already waiting for the host.'}];
     if(typeof body.id!=='string'|| !/^[a-zA-Z0-9-]{1,64}$/.test(body.id))return [400,{error:'Invalid action.'}];
     if(g.results[player.id]?.id===body.id)return [200,{queued:false}];
-    g.pending.push({id:body.id,playerId:player.id,territory:body.territory,ticket:body.ticket});
+    g.pending.push({id:body.id,playerId:player.id,territory:body.territory,option:body.option,amount:body.amount,ticket:body.ticket});
     // Consume the offered choice immediately, preventing double taps.
     g.views[player.id]={...v,ticket:null,options:[],message:'Waiting for host confirmation…'};
     return [202,{queued:true}];

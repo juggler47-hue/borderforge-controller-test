@@ -38,7 +38,7 @@ export function createApp({ttl = 30 * 60_000} = {}) {
         rooms.set(code,{hostToken,players:new Map(),count:0,last:null,touched:Date.now()});
         return send(res,201,{code,token:hostToken});
       }
-      const match=path.match(/^\/api\/rooms\/([A-Z2-9]{8})(?:\/(join|press|sync|capital))?$/);
+      const match=path.match(/^\/api\/rooms\/([A-Z2-9]{8})(?:\/(join|press|sync|capital|move))?$/);
       const room=match && rooms.get(match[1]);
       if (!room) return send(res,404,{error:'Room has closed or expired. Ask the host for a new code.'});
       const action=match[2];
@@ -53,7 +53,7 @@ export function createApp({ttl = 30 * 60_000} = {}) {
       const isHost=key===room.hostToken;
       const player=room.players.get(key);
       if (!isHost && !player) return send(res,403,{error:'Please join the room again.'});
-      if (req.method==='POST' && (action==='sync'||action==='capital')) { const [code,data]=gameRoomAction(room,action,body,player,isHost); return send(res,code,data); }
+      if (req.method==='POST' && (action==='sync'||action==='capital'||action==='move')) { const [code,data]=gameRoomAction(room,action,body,player,isHost); return send(res,code,data); }
       if (req.method==='DELETE' && !action && isHost) { rooms.delete(match[1]); return send(res,200,{closed:true}); }
       if (req.method==='GET' && !action) {
         if (isHost) room.touched=Date.now();
