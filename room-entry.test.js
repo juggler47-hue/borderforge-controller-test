@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import vm from 'node:vm';
 test('room input accepts copied formatting and links without guessing ambiguous digits',async()=>{
- const js=await readFile(new URL('../public/room.js',import.meta.url),'utf8');
+ const js=await readFile(new URL('./room.js',import.meta.url),'utf8');
  const fn=js.slice(js.indexOf('  function normalizeRoomEntry'),js.indexOf('  if(!phone)'));
  const context=vm.createContext({URL});vm.runInContext(fn,context);
  const normalize=context.normalizeRoomEntry;

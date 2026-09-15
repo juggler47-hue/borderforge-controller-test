@@ -18,7 +18,7 @@ export function createApp({ttl = 30 * 60_000} = {}) {
         const files = {'/':'index.html','/index.html':'index.html','/controller.html':'controller.html','/room.js':'room.js','/room.css':'room.css','/game-bridge.js':'game-bridge.js'};
         const file = files[path];
         if (!file || req.method !== 'GET') return send(res,404,{error:'Page not found.'});
-        const data = await readFile(new URL(`./public/${file}`,import.meta.url));
+        const data = await readFile(new URL(`./${file}`,import.meta.url));
         res.writeHead(200,{'Content-Type':file.endsWith('.html')?'text/html; charset=utf-8':file.endsWith('.js')?'text/javascript; charset=utf-8':'text/css; charset=utf-8','Cache-Control':'no-cache'});
         return res.end(data);
       }

@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {gameRoomAction} from '../game-rooms.js';
+import {gameRoomAction} from './game-rooms.js';
 import vm from 'node:vm';
 import {readFile} from 'node:fs/promises';
 test('controller mailbox rejects other territories, duplicate pending actions and phone sync',()=>{
@@ -18,7 +18,7 @@ test('game bridge checks identity, handoff, ownership, stale campaign and duplic
  let calls=0;
  const state={turn:1,phase:'capital',pregameStage:'capital',pregameIndex:0,currentPlayer:0,players:[{id:0,name:'Commander',isHuman:true},{id:1,name:'Second',isHuman:true}],map:{territories:[{id:0,name:'Home',owner:0},{id:1,name:'Other',owner:1}]}};
  const context=vm.createContext({state,crypto:{randomUUID:()=> 'epoch'},window:{BorderforgeMultiplayer:{status:{mode:'local'}}},handoffPending:false,onTerritoryClick(id){calls++;state.players[0].capitalId=id;state.phase='reinforce';}});
- vm.runInContext(await readFile(new URL('../public/game-bridge.js',import.meta.url),'utf8'),context);
+ vm.runInContext(await readFile(new URL('./game-bridge.js',import.meta.url),'utf8'),context);
  const bridge=context.window.BorderforgeControllerGame;
  bridge.assign('p',0);assert.throws(()=>bridge.assign('other',0));
  const v=bridge.view('p');assert.equal(v.options.length,1);

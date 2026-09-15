@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {createApp} from '../server.js';
+import {createApp} from './server.js';
 import {readFile} from 'node:fs/promises';
 import vm from 'node:vm';
 
@@ -22,7 +22,7 @@ test('room lifecycle, role boundaries, isolation and duplicate protection',async
  assert.equal((await call(room,'DELETE',null,phone.token)).status,405);
  assert.equal((await call(room,'DELETE',null,host.token)).status,200);
  assert.equal((await call(room,'GET',null,phone.token)).status,404);
- assert.equal((await fetch(base+'/../server.js')).status,404);
+ assert.equal((await fetch(base+'/./server.js')).status,404);
  assert.equal((await fetch(base+'/controller.html')).status,200);
 });
 test('inactive rooms expire',async t=>{
@@ -32,8 +32,8 @@ test('inactive rooms expire',async t=>{
  await new Promise(r=>setTimeout(r,15));assert.equal((await fetch(base+'/api/rooms/'+host.code,{headers:{Authorization:`Bearer ${host.token}`}})).status,404);
 });
 test('existing game scripts are preserved exactly and still parse',async()=>{
- const original=await readFile(new URL('./fixtures/original-game.html',import.meta.url),'utf8');
- const current=await readFile(new URL('../public/index.html',import.meta.url),'utf8');
+ const original=await readFile(new URL('./original-game.html',import.meta.url),'utf8');
+ const current=await readFile(new URL('./index.html',import.meta.url),'utf8');
  const scripts=html=>[...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)].map(m=>m[1]).filter(s=>s.trim());
  assert.deepEqual(scripts(current),scripts(original));
  for(const script of scripts(current))new vm.Script(script);

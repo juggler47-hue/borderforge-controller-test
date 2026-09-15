@@ -23,3 +23,6 @@ Seven automated checks pass: preservation/parsing of original game scripts, room
 Real browser testing confirmed capital selection, placement of five reinforcements on Sector Z1, and transition to the attack phase. A legal attack was selected and submitted, but browser-session reset interrupted inspection of its outcome. Full real-game attack/capture/end-turn verification and physical-phone testing of this preview remain outstanding. This preview has not been deployed.
 
 Every original inline game script is preserved; the bridge calls existing game functions. Original game backup: test/fixtures/original-game.html. Run locally with Node 22 or newer and npm start. No external packages required.
+
+Packaging correction: all runtime files and tests now live at the repository root. Upload every file in this package at that level. The server serves only explicitly allowed game assets. Older public and test folders may remain; the new server and explicit test command do not use them. Original backup is original-game.html. All seven automated checks pass with this layout.
+

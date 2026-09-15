@@ -1,1 +1,13 @@
-{"name":"borderforge-controller-milestone","version":"0.1.0","private":true,"type":"module","scripts":{"start":"node server.js","test":"node --test"},"engines":{"node":">=22"}}
+{
+  "name": "borderforge-controller-milestone",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test rooms.test.js game-rooms.test.js phone-turn.test.js room-entry.test.js"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
