@@ -6,8 +6,7 @@
   function local(){return window.BorderforgeMultiplayer?.status?.mode==='local';}
   function view(id){
     refresh();const s=game(),seat=assignments.get(id),p=s?.players[seat];
-    const map=s&&seat!==undefined?{territories:s.map.territories.map(t=>({id:t.id,name:t.name,x:t.x,y:t.y,owner:t.owner,armies:t.armies,terrain:t.terrain,capital:!!t.isCapital,color:s.players[t.owner]?.color||'#65778b'})),edges:s.map.territories.flatMap(t=>(s.map.adjacency?.[t.id]||[]).filter(id=>id>t.id).map(id=>[t.id,id]))}:null;
-    const base={seat:seat??null,commander:p?.name||'',map,message:'Start a Local / Hot-Seat game on the computer.',options:[],ticket:null};
+    const base={seat:seat??null,commander:p?.name||'',message:'Start a Local / Hot-Seat game on the computer.',options:[],ticket:null};
     if(!s||seat===undefined)return base;
     if(!local())return {...base,message:'Use Local / Hot-Seat for phone-controlled games in this version.'};
     if(s.gameOver||!p?.isHuman||p.eliminated)return {...base,message:'Game ended or commander unavailable.'};
@@ -30,16 +29,7 @@
       owned.filter(t=>t.armies>=2).forEach(from=>(s.map.adjacency[from.id]||[]).forEach(toId=>{const to=s.map.territories[toId];if(to&&to.owner!==seat&&!hasTruce(seat,to.owner))options.push({id:`attack-${from.id}-${to.id}`,kind:'attack',from:from.id,to:to.id,name:`${from.name} (${from.armies}) → ${to.name} (${to.armies})`});}));
       options.push({id:'next',kind:'next',name:'Finish attacking'});
     }else if(s.phase==='fortify'){message='Fortify on the computer, or finish your turn here.';options.push({id:'next',kind:'next',name:'End turn without further fortification'});}
-    let advisor=null;
-    if(!advance&&typeof getNextMove==='function'&&['reinforce','attack','fortify'].includes(s.phase)){
-      try{const rec=getNextMove();if(rec){const a=rec.action||{};let match;
-        if(a.type==='place_armies')match=options.find(o=>o.kind==='reinforce'&&o.territory===a.territoryId);
-        if(a.type==='attack_setup')match=options.find(o=>o.kind==='attack'&&o.from===a.fromId&&o.to===a.toId);
-        if(a.type==='next_phase')match=options.find(o=>o.kind==='next');
-        advisor={label:rec.label,why:rec.why,option:match?.id,amount:match?.max?Math.max(match.min,Math.min(match.max,Number(a.count)||1)):undefined};
-      }}catch{advisor={label:'Advisor unavailable for this step.',why:'Continue with a legal move below.'};}
-    }
-    return {...base,message,advisor,ticket:`${epoch}:${serial}:${revision}:${seat}`,options};
+    return {...base,message,ticket:`${epoch}:${serial}:${revision}:${seat}`,options};
   }
   window.BorderforgeControllerGame={
     seats(){refresh();return local()?(game()?.players||[]).filter(p=>p.isHuman&&!p.eliminated).map(p=>({id:p.id,name:p.name})):[];},

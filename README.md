@@ -26,11 +26,3 @@ Every original inline game script is preserved; the bridge calls existing game f
 
 Packaging correction: all runtime files and tests now live at the repository root. Upload every file in this package at that level. The server serves only explicitly allowed game assets. Older public and test folders may remain; the new server and explicit test command do not use them. Original backup is original-game.html. All seven automated checks pass with this layout.
 
-
-## Phone map and advisor update
-The phone now displays a simplified node map with real territory positions, connections, ownership colors, army counts, capital stars, zoom controls and scrolling. Tap your territory to select a reinforcement/capital control; for attacks tap your source then a highlighted target. Map selection scrolls to the existing text control and still requires explicit confirmation. Text controls remain available.
-The current player's existing getNextMove recommendation is shown with its reason. Review recommended move selects a matching legal phone action and suggested reinforcement amount; unsupported advisor actions explicitly remain on the computer. This is a schematic map, not the desktop's geographic polygon rendering. Original inline game scripts are preserved.
-
-
-Map/advisor verification: all nine automated checks passed. Real-browser test displayed the map, selected Sector Z1 via the map, confirmed its capital, displayed the real recommendation to reinforce it by three armies, and verified Review recommended move filled the amount as 3. Physical phone layout remains to be verified after deployment. This update has not been published.
-

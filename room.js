@@ -28,12 +28,6 @@
       if(key===choiceKey)return;choiceKey=key;gameBox.replaceChildren();
       const info=document.createElement('p');info.textContent=v?`${v.commander? v.commander+' — ':''}${v.message}`:'Waiting for the host to assign your commander.';gameBox.append(info);
       if(data.result){const result=document.createElement('p');result.textContent=data.result.message;gameBox.append(result);}
-      const controls=new Map();
-      const choose=(id,recommended)=>{const c=controls.get(id);if(!c)return;if(c.amount&&recommended!==undefined)c.amount.value=recommended;c.card.scrollIntoView({block:'center',behavior:'smooth'});c.button.focus();c.card.classList.add('phone-chosen');};
-      window.renderPhoneMap?.(gameBox,v,choose);
-      if(v?.advisor){const box=document.createElement('section');box.className='phone-advisor';const title=document.createElement('h2');title.textContent='Advisor recommendation';const label=document.createElement('p');label.textContent=v.advisor.label;const why=document.createElement('p');why.textContent=v.advisor.why||'';box.append(title,label,why);
-        if(v.advisor.option!==undefined){const use=document.createElement('button');use.textContent='Review recommended move';use.onclick=()=>choose(v.advisor.option,v.advisor.amount);box.append(use);}else{const note=document.createElement('p');note.textContent='Use the computer for this recommendation.';box.append(note);}gameBox.append(box);}
-      const fallback=document.createElement('h2');fallback.textContent='Move controls · text fallback';gameBox.append(fallback);
       for(const option of v?.options||[]){
         const card=document.createElement('div');
         let amount;
@@ -50,7 +44,7 @@
             try{await api(`/api/rooms/${session.code}/move`,'POST',{id:crypto.randomUUID(),ticket:v.ticket,option:option.id,amount:count});confirm.textContent='Sent. Waiting for the computer…';}
             catch(e){status(e.message);choiceKey='';}
           };
-        };card.append(button);gameBox.append(card);controls.set(option.id,{card,button,amount});
+        };card.append(button);gameBox.append(card);
       }
       return;
     }
