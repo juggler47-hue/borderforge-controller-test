@@ -5,11 +5,12 @@
   "type": "module",
   "scripts": {
     "start": "node server.js",
-    "test": "node --test rooms.test.js game-rooms.test.js phone-turn.test.js room-entry.test.js map-advisor.test.js blitz.test.js fortify.test.js"
+    "test": "node --test rooms.test.js game-rooms.test.js phone-turn.test.js room-entry.test.js map-advisor.test.js blitz.test.js fortify.test.js guides.test.js"
   },
   "engines": {
     "node": ">=22"
   }
 }
+
 
 

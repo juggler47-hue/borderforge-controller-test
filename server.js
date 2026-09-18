@@ -16,10 +16,11 @@ export function createApp({ttl = 30 * 60_000} = {}) {
       if (path === '/health') return send(res,200,{ok:true});
       if (!path.startsWith('/api/')) {
         const files = {'/':'index.html','/index.html':'index.html','/controller.html':'controller.html','/room.js':'room.js','/room.css':'room.css','/game-bridge.js':'game-bridge.js','/phone-map.js':'phone-map.js','/board-view.js':'board-view.js'};
-        const file = files[path];
+        Object.assign(files,{'/help':'help.html','/help.html':'help.html','/quick-start.html':'quick-start.html','/manual.html':'manual.html','/quick-start.pdf':'quick-start.pdf','/manual.pdf':'manual.pdf'});
+        const file = Object.hasOwn(files,path)?files[path]:undefined;
         if (!file || req.method !== 'GET') return send(res,404,{error:'Page not found.'});
         const data = await readFile(new URL(`./${file}`,import.meta.url));
-        res.writeHead(200,{'Content-Type':file.endsWith('.html')?'text/html; charset=utf-8':file.endsWith('.js')?'text/javascript; charset=utf-8':'text/css; charset=utf-8','Cache-Control':'no-cache'});
+        res.writeHead(200,{'Content-Type':file.endsWith('.pdf')?'application/pdf':file.endsWith('.html')?'text/html; charset=utf-8':file.endsWith('.js')?'text/javascript; charset=utf-8':'text/css; charset=utf-8','Cache-Control':'no-cache'});
         return res.end(data);
       }
       for (const [code, room] of rooms) if (Date.now()-room.touched > ttl) rooms.delete(code);

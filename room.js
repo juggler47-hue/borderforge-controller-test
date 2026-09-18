@@ -12,13 +12,16 @@
     const panel=document.createElement('details'); panel.id='bf-room-panel';panel.open=true;
     panel.innerHTML='<summary>Phone controller · connection test</summary><section id="bf-room"><p>Computers show the full game. In-room phones send controls while players watch the TV.</p><button id="bf-create">Create test room</button><button id="bf-close" hidden>Close room</button><p id="bf-invite"></p><p id="bf-count"></p><p id="bf-status" role="status" aria-live="polite">Stage 2: assign a commander and choose a capital from the phone.</p></section>';
     document.body.append(panel);
-    panel.querySelector('summary').textContent='Phone setup · MAP + BLITZ + FORTIFY — v3';
+    panel.querySelector('summary').textContent='Phone setup · MAP + BLITZ + FORTIFY — v3 + GUIDES';
     document.getElementById('bf-create').textContent='Connect a phone';
     const start=document.createElement('button');start.textContent='Start game with current settings';start.onclick=()=>{const original=document.getElementById('startBtn');if(original&&!original.disabled){panel.open=false;original.click();}else document.getElementById('bf-status').textContent='Finish game setup on the computer first.';};document.getElementById('bf-room').append(start);
     const launcher=document.createElement('button');launcher.textContent='Phone setup';launcher.className='hdr-save-btn';launcher.onclick=()=>{panel.open=true;panel.scrollIntoView({block:'nearest'});};
     (document.querySelector('header')||document.body).append(launcher);
   }
   const $=id=>document.getElementById(id);
+  function guideLinks(){const nav=document.createElement('nav');nav.className='bf-guide-links';nav.setAttribute('aria-label','Game guides');for(const [label,url]of [['Help & guides','help.html'],['Quick Start','quick-start.html'],['Manual','manual.html']]){const a=document.createElement('a');a.textContent=label;a.href=url;a.target='_blank';a.rel='noopener';a.title='Opens in a new tab; your game stays open';nav.append(a);}return nav;}
+  $('bf-room').prepend(guideLinks());
+  if(!phone){document.getElementById('setupIntro')?.append(guideLinks());const a=document.createElement('a');a.href='help.html';a.target='_blank';a.rel='noopener';a.textContent='Help & guides';a.className='bf-header-help';(document.querySelector('header')||document.body).append(a);}
   const gameBox=document.createElement('section');gameBox.id='bf-game-controls';$('bf-room').append(gameBox);
   let rosterKey='',choiceKey='',acks=[],chosenId=null,actionError='';
   const mapInteraction={zoom:1,source:null};
@@ -135,6 +138,7 @@
   }
   try{const saved=JSON.parse(sessionStorage.getItem('bf-controller-test-'+(phone?'phone':'host')));if(saved&&/^[A-Z2-9]{8}$/.test(saved.code)&&typeof saved.token==='string'){session=saved;show();poll();}}catch{}
 })();
+
 
 
 
