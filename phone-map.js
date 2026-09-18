@@ -1,13 +1,14 @@
 // A lightweight public board; actions still use the validated option list.
-window.renderPhoneMap=function(container,view,onChoose){
+window.renderPhoneMap=function(container,view,onChoose,interaction={}){
   if(!view?.map?.territories?.length)return;
   const section=document.createElement('section');section.className='phone-map';
   const heading=document.createElement('h2');heading.textContent='Battlefield';section.append(heading);
   const hint=document.createElement('p');hint.textContent='Tap a territory to inspect it. To attack, tap your army, then a highlighted enemy.';section.append(hint);
   const toolbar=document.createElement('div'),scroll=document.createElement('div');scroll.className='phone-map-scroll';
   const ns='http://www.w3.org/2000/svg',svg=document.createElementNS(ns,'svg');svg.setAttribute('viewBox','0 0 1000 700');svg.setAttribute('aria-label','Battlefield territory map');
-  let zoom=1,source=null;
-  for(const [label,delta] of [['Zoom in',.5],['Zoom out',-.5]]){const b=document.createElement('button');b.textContent=label;b.onclick=()=>{zoom=Math.max(1,Math.min(3,zoom+delta));svg.style.width=`${zoom*100}%`;};toolbar.append(b);}
+  let zoom=interaction.zoom||1,source=interaction.source??null;
+  svg.style.width=`${zoom*100}%`;
+  for(const [label,delta] of [['Zoom in',.5],['Zoom out',-.5]]){const b=document.createElement('button');b.textContent=label;b.onclick=()=>{zoom=Math.max(1,Math.min(3,zoom+delta));interaction.zoom=zoom;svg.style.width=`${zoom*100}%`;};toolbar.append(b);}
   const info=document.createElement('p');info.setAttribute('aria-live','polite');
   const ts=view.map.territories,byId=new Map(ts.map(t=>[t.id,t])),nodes=new Map();
   const make=(tag,attrs)=>{const el=document.createElementNS(ns,tag);for(const [k,v]of Object.entries(attrs))el.setAttribute(k,v);return el;};
@@ -21,8 +22,17 @@ window.renderPhoneMap=function(container,view,onChoose){
     const name=make('text',{x:t.x,y:t.y+36,'text-anchor':'middle',fill:'#eaf1f8','font-size':11});name.textContent=t.name+(t.capital?' ★':'');g.append(name);
     const click=()=>{info.textContent=`${t.name}: ${t.armies} armies${t.owner===view.seat?' · Your territory':''}${t.terrain?' · '+t.terrain:''}`;
       const direct=(view.options||[]).find(o=>o.territory===t.id);if(direct){source=null;onChoose(direct.id);}
-      else{const attack=(view.options||[]).find(o=>o.kind==='attack'&&o.from===source&&o.to===t.id);if(attack){onChoose(attack.id);source=null;}else if((view.options||[]).some(o=>o.kind==='attack'&&o.from===t.id)){source=t.id;info.textContent+=' · Now tap a highlighted enemy.';}else source=null;}highlight();};
+      else{const attack=(view.options||[]).find(o=>o.kind==='attack'&&o.from===source&&o.to===t.id);if(attack){onChoose(attack.id);}else if((view.options||[]).some(o=>o.kind==='attack'&&o.from===t.id)){source=t.id;info.textContent+=' · Now tap a highlighted enemy.';}else source=null;}interaction.source=source;highlight();};
     g.onclick=click;g.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();click();}};svg.append(g);
+  }
+  if(view.map.board&&window.restoreGameBoard){
+    const actual=window.restoreGameBoard(view.map.board);
+    if(actual){
+      const drawings=[...svg.children];svg.replaceChildren(...actual.children);
+      svg.setAttribute('viewBox',actual.getAttribute('viewBox')||'0 0 1000 700');
+      // Transparent touch targets use the existing validated selection handlers.
+      for(const g of drawings.filter(el=>el.localName==='g')){const circle=g.querySelector('circle');circle.setAttribute('fill','transparent');circle.setAttribute('r','26');g.querySelectorAll('text').forEach(t=>t.remove());svg.append(g);}
+    }
   }
   highlight();scroll.append(svg);section.append(toolbar,scroll,info);container.append(section);
 };

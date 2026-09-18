@@ -15,7 +15,7 @@ export function createApp({ttl = 30 * 60_000} = {}) {
       const path = new URL(req.url, 'http://localhost').pathname;
       if (path === '/health') return send(res,200,{ok:true});
       if (!path.startsWith('/api/')) {
-        const files = {'/':'index.html','/index.html':'index.html','/controller.html':'controller.html','/room.js':'room.js','/room.css':'room.css','/game-bridge.js':'game-bridge.js'};
+        const files = {'/':'index.html','/index.html':'index.html','/controller.html':'controller.html','/room.js':'room.js','/room.css':'room.css','/game-bridge.js':'game-bridge.js','/phone-map.js':'phone-map.js','/board-view.js':'board-view.js'};
         const file = files[path];
         if (!file || req.method !== 'GET') return send(res,404,{error:'Page not found.'});
         const data = await readFile(new URL(`./${file}`,import.meta.url));
@@ -27,7 +27,7 @@ export function createApp({ttl = 30 * 60_000} = {}) {
       if (req.method === 'POST') {
         if (!(req.headers['content-type'] || '').startsWith('application/json')) return send(res,415,{error:'JSON required.'});
         let raw='';
-        for await (const chunk of req) { raw+=chunk; if (raw.length>32768) return send(res,413,{error:'Request too large.'}); }
+        for await (const chunk of req) { raw+=chunk; if (raw.length>2097152) return send(res,413,{error:'Request too large.'}); }
         try { body=JSON.parse(raw); } catch { return send(res,400,{error:'Invalid request.'}); }
         if (!body || typeof body !== 'object' || Array.isArray(body)) return send(res,400,{error:'Invalid request.'});
       }
