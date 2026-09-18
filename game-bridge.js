@@ -31,14 +31,26 @@
       owned.filter(t=>t.armies>=2).forEach(from=>(s.map.adjacency[from.id]||[]).forEach(toId=>{const to=s.map.territories[toId];if(to&&to.owner!==seat&&!hasTruce(seat,to.owner))options.push({id:`attack-${from.id}-${to.id}`,kind:'attack',from:from.id,to:to.id,name:`${from.name} (${from.armies}) → ${to.name} (${to.armies})`});}));
       for(const attack of [...options])options.push({...attack,id:`blitz-${attack.from}-${attack.to}`,kind:'blitz'});
       options.push({id:'next',kind:'next',name:'Finish attacking'});
-    }else if(s.phase==='fortify'){message='Fortify on the computer, or finish your turn here.';options.push({id:'next',kind:'next',name:'End turn without further fortification'});}
+    }else if(s.phase==='fortify'){
+      message='Tap a source army, then a highlighted friendly destination. One fortification ends your turn.';
+      if(s._v51FortifyCommitted)return {...base,message:'Fortification complete. Finishing your turn…'};
+      if(typeof reachableFriendlyTerritories==='function'&&typeof window.v51ExecuteFortifyMove==='function'){
+        for(const from of owned.filter(t=>t.armies>1))for(const toId of reachableFriendlyTerritories(from.id,seat)){
+          const to=s.map.territories[toId];
+          if(to&&to.id!==from.id&&to.owner===seat)options.push({id:`fortify-${from.id}-${to.id}`,kind:'fortify',from:from.id,to:to.id,min:1,max:from.armies-1,name:`${from.name} (${from.armies}) → ${to.name} (${to.armies})`});
+        }
+      }
+      if(!options.length)message='No legal fortification is available. You can end your turn.';
+      options.push({id:'next',kind:'next',name:'End turn without fortifying'});
+    }
     let advisor=null;
     if(!advance&&typeof getNextMove==='function'&&['reinforce','attack','fortify'].includes(s.phase)){
       try{const key=`${serial}:${revision}:${seat}`;if(key!==advisorKey){cachedAdvisor=getNextMove();refresh();advisorKey=`${serial}:${revision}:${seat}`;}const rec=cachedAdvisor;if(rec){const a=rec.action||{};let match;
         if(a.type==='place_armies')match=options.find(o=>o.kind==='reinforce'&&o.territory===a.territoryId);
         if(a.type==='attack_setup')match=options.find(o=>o.kind==='attack'&&o.from===a.fromId&&o.to===a.toId);
+        if(a.type==='fortify_setup')match=options.find(o=>o.kind==='fortify'&&o.from===a.fromId&&o.to===a.toId);
         if(a.type==='next_phase')match=options.find(o=>o.kind==='next');
-        advisor={label:rec.label,why:rec.why,option:match?.id,amount:match?.max?Math.max(match.min,Math.min(match.max,Number(a.count)||1)):undefined};
+        advisor={label:rec.label,why:rec.why,option:match?.id,amount:match?.max?Math.max(match.min,Math.min(match.max,Number(a.amount??a.count)||1)):undefined};
       }}catch{advisor={label:'Advisor unavailable for this step.',why:'Continue with a legal move below.'};}
     }
     return {...base,message,advisor,ticket:`${epoch}:${serial}:${revision}:${seat}`,options};
@@ -56,6 +68,7 @@
         else if(o.kind==='reinforce'){const before=s.reinforcementsLeft;for(let n=0;n<amount;n++)onTerritoryClick(o.territory);message=`Placed ${before-s.reinforcementsLeft} armies at ${s.map.territories[o.territory].name}.`;}
         else if(o.kind==='attack'){selected=o.from;attackTarget=o.to;confirmAttack();message='Attack round resolved. Check the updated armies on screen.';}
         else if(o.kind==='blitz'){selected=o.from;attackTarget=o.to;blitzAttack();message='Blitz finished. Check the board and advance armies if prompted.';}
+        else if(o.kind==='fortify'){const moved=window.v51ExecuteFortifyMove(o.from,o.to,amount,{source:'phone',endTurn:true});message=moved>0?`Moved ${moved} armies to ${s.map.territories[o.to].name}. Your turn is complete.`:'That fortification is no longer legal. Choose again.';}
         else if(o.kind==='advance'){document.getElementById('advanceSlider').value=amount;confirmAdvance();message=`Advanced ${amount} armies.`;}
         else if(o.kind==='next'){nextPhase();message='Turn step updated.';}
       }

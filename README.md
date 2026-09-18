@@ -1,27 +1,22 @@
-# Border Forge — visual phone controller and blitz
+# Border Forge: MAP + BLITZ + FORTIFY — v3
 
-This preview keeps the full game on the computer/TV. Phones control local human commanders. Remote computer multiplayer is still separate.
+Upload ALL 19 files inside this package to the root of your existing borderforge-controller-test repository, commit, and deploy the latest commit in Render. Keep the existing settings. Refresh both computer and phone. Check that the phone displays MAP + BLITZ + FORTIFY — v3 before joining a new room.
 
-## Install
-Extract this ZIP. Upload all enclosed files to the root of your existing borderforge-controller-test GitHub repository. Commit, then deploy the latest commit in its existing Render service. Keep the current settings (build: npm test; start: npm start). Refresh both computer and phone after deployment.
+Keep your v2 ZIP as the previous working checkpoint.
 
-## Solo test
-1. Computer: Local / Hot-Seat, one human, one AI, Frontier Command, Quick Deploy. Disable Guided first-game tutorial for this controller test.
-2. Phone setup > Connect a phone. Join the room on your phone, then start the game on the computer.
-3. The phone should show the actual battlefield. Tap a friendly territory to choose your capital or place armies. Use Zoom in if needed; landscape gives more room.
-4. During attacks, tap your territory and then a highlighted enemy. Choose Attack one round or Blitz until exhausted, then confirm.
-5. Blitz uses the same routine as the desktop button: it stops at capture, attacker exhaustion, or the existing safety limit. It can consume your attacking force.
-6. After a single round, the same legal attack remains selected. After capture, choose the number of armies to advance.
-7. Finish attacking and end your turn. Fortification, handoff screens and special dialogs still require the computer.
+## Fortify from your phone
+1. Finish attacking to enter the Fortify phase.
+2. Tap one of your territories with at least two armies.
+3. Tap a highlighted friendly destination. Destinations may be reached through a continuous chain of your territories.
+4. Enter how many armies to move. At least one army must remain at the source.
+5. Choose Move armies & end turn, then confirm. Cancel lets you reconsider.
 
-The original game rules and inline scripts are unchanged. This is a controller preview, not a finished phone-only game. Rooms do not survive service restarts.
+Review recommended move selects the advisor's source, destination, and suggested army count; you may change the count before confirming.
 
-## Checks
-Automated checks cover existing game-script preservation, room permissions, legal actions, stale commands, map selection, advisor matching, and the original desktop blitz loop under controlled capture/exhaustion scenarios. Real-device phone testing remains necessary.
+The game allows ONE fortification per turn. A successful move automatically ends your turn, just as on the computer. End turn without fortifying remains available if you prefer to skip movement.
 
-Browser verification: actual board rendered; map capital selection, seven reinforcements, phase transition, five-round blitz capture, and retained single-round attack selection succeeded. Blitz retains the desktop game's automatic movement behavior when it resolves capture without a separate advance prompt. Physical-phone testing remains.
+The host uses the game's existing movement routine, including proportional specialist movement, legality checks, and turn handling. Core game scripts are unchanged. Special dialogs still require the computer. Phones remain same-room controllers in Local / Hot-Seat mode; remote computer multiplayer remains separate.
 
-Also verified: finish attacking, end turn, AI turn, and return to human reinforcements. All 12 automated checks pass.
-
-Version identification: phone page and computer Phone setup show MAP + BLITZ — v2. If that label is missing, the old files are still being served. Upload all 18 files from this package to the repository root, not the older Borderforge-upload-fix package.
-
+## Verification
+All 14 automated checks pass. New checks use the actual game's pathfinding and fortification routine, covering connected paths, disconnected/enemy destinations, army bounds, stale/duplicate orders, advisor quantities and one move per turn.
+Browser testing verified friendly destination highlighting, advisor prefill of nine armies, changing that to four, actual movement from Sector A1 to Province G1, and automatic transition to the AI turn. Physical-phone testing remains.

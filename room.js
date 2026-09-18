@@ -12,7 +12,7 @@
     const panel=document.createElement('details'); panel.id='bf-room-panel';panel.open=true;
     panel.innerHTML='<summary>Phone controller · connection test</summary><section id="bf-room"><p>Computers show the full game. In-room phones send controls while players watch the TV.</p><button id="bf-create">Create test room</button><button id="bf-close" hidden>Close room</button><p id="bf-invite"></p><p id="bf-count"></p><p id="bf-status" role="status" aria-live="polite">Stage 2: assign a commander and choose a capital from the phone.</p></section>';
     document.body.append(panel);
-    panel.querySelector('summary').textContent='Phone setup · MAP + BLITZ — v2';
+    panel.querySelector('summary').textContent='Phone setup · MAP + BLITZ + FORTIFY — v3';
     document.getElementById('bf-create').textContent='Connect a phone';
     const start=document.createElement('button');start.textContent='Start game with current settings';start.onclick=()=>{const original=document.getElementById('startBtn');if(original&&!original.disabled){panel.open=false;original.click();}else document.getElementById('bf-status').textContent='Finish game setup on the computer first.';};document.getElementById('bf-room').append(start);
     const launcher=document.createElement('button');launcher.textContent='Phone setup';launcher.className='hdr-save-btn';launcher.onclick=()=>{panel.open=true;panel.scrollIntoView({block:'nearest'});};
@@ -43,13 +43,13 @@
         const title=document.createElement('p');title.textContent=option.name;card.append(title);
         let amount;
         if(option.max!==undefined){const label=document.createElement('label');label.textContent='Armies';amount=document.createElement('input');amount.type='number';amount.min=option.min;amount.max=option.max;amount.value=option.min;label.append(amount);card.append(label);}
-        const button=document.createElement('button');button.textContent=option.kind==='attack'?'Attack one round':option.kind==='capital'?`Capital: ${option.name}`:option.name;
+        const button=document.createElement('button');button.textContent=option.kind==='fortify'?'Move armies & end turn':option.kind==='attack'?'Attack one round':option.kind==='capital'?`Capital: ${option.name}`:option.name;
         const prepare=(move=option)=>{
-          chosenId=option.id;
+          chosenId=option.kind==='next'?null:option.id;
           if(amount&&!amount.reportValidity())return;
           const count=amount?Number(amount.value):undefined;
           if(amount&&(!Number.isInteger(count)||count<option.min||count>option.max)){info.textContent='Choose a whole number within the army limit.';return;}
-          const confirm=document.createElement('button');confirm.textContent=`Confirm ${move.kind==='blitz'?'blitz until exhausted':move.kind==='attack'?'one round':option.name}${count!==undefined?' — '+count+' armies':''}`;
+          const confirm=document.createElement('button');confirm.textContent=`Confirm ${move.kind==='fortify'?'fortification & end turn':move.kind==='blitz'?'blitz until exhausted':move.kind==='attack'?'one round':option.name}${count!==undefined?' — '+count+' armies':''}`;
           const cancel=document.createElement('button');cancel.textContent='Cancel';cancel.onclick=()=>{choiceKey='';};
           const explanation=document.createElement('p');explanation.textContent=move.kind==='blitz'?`${option.name}. Repeat combat until capture or your army cannot continue. This can exhaust your attacking force.`:option.name;
           dock.replaceChildren(explanation,confirm,cancel);
@@ -61,7 +61,7 @@
         if(option.kind==='attack'){const blitz=v.options.find(o=>o.kind==='blitz'&&o.from===option.from&&o.to===option.to);if(blitz){const b=document.createElement('button');b.textContent='Blitz until exhausted';b.onclick=()=>prepare(blitz);card.append(b);}}
         fallback.append(card);if(option.kind==='next')phaseControls.append(card);if(option.kind==='advance')dock.append(card);controls.set(option.id,{card,button,amount});
       }
-      if(controls.has(chosenId))choose(chosenId);
+      if(chosenId!=='next'&&controls.has(chosenId))choose(chosenId);
       else if(v?.ticket)chosenId=null;
       return;
     }
@@ -135,5 +135,7 @@
   }
   try{const saved=JSON.parse(sessionStorage.getItem('bf-controller-test-'+(phone?'phone':'host')));if(saved&&/^[A-Z2-9]{8}$/.test(saved.code)&&typeof saved.token==='string'){session=saved;show();poll();}}catch{}
 })();
+
+
 
 
